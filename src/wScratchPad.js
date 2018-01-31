@@ -81,18 +81,23 @@
           height = Math.ceil(this.$el.innerHeight()),
           devicePixelRatio = window.devicePixelRatio || 1;
 
-      // Set number of pixels required for getting scratch percentage.
-      this.pixels = width * height;
+      this.devicePixelRatio = devicePixelRatio;
+
+      this.ctx.scale(devicePixelRatio, devicePixelRatio);
+
+      width *= devicePixelRatio;
+      height *= devicePixelRatio;
 
       // We'll do a hard reset for the height here in case
       // we need to run this at differnt sizes.
       this.$scratchpad.attr('width', width).attr('height', height);
 
-      this.canvas.setAttribute('width', width * devicePixelRatio);
-      this.canvas.setAttribute('height', height * devicePixelRatio);
-      this.ctx.scale(devicePixelRatio, devicePixelRatio);
+      this.canvas.setAttribute('width', width);
+      this.canvas.setAttribute('height', height);
 
-      this.pixels = width * devicePixelRatio * height * devicePixelRatio;
+      // Set number of pixels required for getting scratch percentage.
+      this.pixels = width * height;
+
 
       // Default to image hidden in case no bg or color is set.
       this.$img.hide();
@@ -171,8 +176,8 @@
     },
 
     _scratchFunc: function (e, event) {
-      e.pageX = Math.floor(e.pageX - this.canvasOffset.left);
-      e.pageY = Math.floor(e.pageY - this.canvasOffset.top);
+      e.pageX = Math.floor(e.pageX - this.canvasOffset.left) * this.devicePixelRatio;
+      e.pageY = Math.floor(e.pageY - this.canvasOffset.top) * this.devicePixelRatio;
       
       this['_scratch' + event](e);
       
@@ -192,20 +197,28 @@
           hits++;
         }
       }
-      
+
       return (hits / this.pixels) * 100;
     },
 
     _scratchDown: function (e) {
       this.ctx.globalCompositeOperation = 'destination-out';
       this.ctx.lineJoin = 'round';
-      this.ctx.lineCap = 'round';
+      this.ctx.lineCap = 'square';
       this.ctx.strokeStyle = this.options.color;
-      this.ctx.lineWidth = this.options.size;
+      this.ctx.lineWidth = this.options.size * this.devicePixelRatio;
       
       //draw single dot in case of a click without a move
       this.ctx.beginPath();
-      this.ctx.arc(e.pageX, e.pageY, this.options.size/2, 0, Math.PI*2, true);
+      // this.ctx.arc(e.pageX, e.pageY, this.options.size/2, 0, Math.PI*2, true);
+
+      for (var i=0;i<3;i++){
+         for (var j=0;j<3;j++){
+           this.ctx.arc(e.pageX + j, e.pageY + j,1,j,Math.PI*6,false);
+           this.ctx.stroke();
+         }
+       }
+
       this.ctx.closePath();
       this.ctx.fill();
       
@@ -286,6 +299,12 @@
   };
 
   $.fn.bindMobileEvents = function () {
+    var touchScreenX = 0.0
+    var touchScreenY = 0.0
+    var touchClientX = 0.0
+    var touchClientY = 0.0
+    var target = null;
+  
     $(this).on('touchstart touchmove touchend touchcancel', function (event) {
       var touches = (event.changedTouches || event.originalEvent.targetTouches),
           first = touches[0],
@@ -305,16 +324,24 @@
       default:
         return;
       }
+      
+      if ( first ) {
+        touchScreenX = first.screenX;
+        touchScreenY = first.screenY;
+        touchClientX = first.clientX;
+        touchClientY = first.clientY;
+        target = first.target;
+      }
 
       var simulatedEvent = document.createEvent('MouseEvent'); 
 
       simulatedEvent.initMouseEvent(
         type, true, true, window, 1, 
-        first.screenX, first.screenY, first.clientX, first.clientY, 
+        touchScreenX, touchScreenY, touchClientX, touchClientY, 
         false, false, false, false, 0/*left*/, null
       );
 
-      first.target.dispatchEvent(simulatedEvent);
+      target.dispatchEvent(simulatedEvent);
     });
   };
 })(jQuery);
