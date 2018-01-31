@@ -299,10 +299,10 @@
   };
 
   $.fn.bindMobileEvents = function () {
-    var touchScreenX = 0.0
-    var touchScreenY = 0.0
-    var touchClientX = 0.0
-    var touchClientY = 0.0
+    var touchScreenX = 0.0;
+    var touchScreenY = 0.0;
+    var touchClientX = 0.0;
+    var touchClientY = 0.0;
     var target = null;
   
     $(this).on('touchstart touchmove touchend touchcancel', function (event) {
